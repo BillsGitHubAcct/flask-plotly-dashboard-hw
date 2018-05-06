@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>BB Dashboard</title>
+  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro" rel="stylesheet">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+
+<div class="container-fluid">
+  <div class="jumbotron text-center">
+    <h1>Belly Button Biodiversity Dashboard</h1>
+	<p>>Use the interactive charts below to explore the dataset</p>
+  </div>
+  <div class="row">
+    <div class="col-sm-3">
+		<div class = "container-fluid" id= "select-sample">
+			<h3>SELECT Sample:</h3>
+			<select id="selDataset" onchange="optionChanged(this.value)">
+			</select>
+		</div>
+		</br></br>
+		<div class = "container-fluid" id= "display-info">
+			<div id = "meta">
+			</div>
+		</div>
+   	</div>
+    <div class="col-sm-6">
+    	<div id="pie">
+		</div>
+    </div>
+    	
+    <div class="col-sm-3">
+    	<div id="gauge">
+		</div>
+    </div>
+	<div class="col-sm-12">
+    	<div id="bubble">
+		</div>
+   	</div>
+  
+ </div>
+
+    
+	<!-- ****************************************************************************** -->
+	<!-- SCRIPT SCRIPT SCRIPT SCRIPT SCRIPT SCRIPT SCRIPT SCRIPT SCRIPT SCRIPT SCRIPT   -->
+	<!-- ****************************************************************************** -->
+	<script>
+
+		var name_url = '/names';
+		var wfreq_url = '/wfreq/';
+
+		
+		function sleep(milliseconds) {
+			var start = new Date().getTime();
+			for (var i = 0; i < 1e7; i++) {
+				if ((new Date().getTime() - start) > milliseconds){
+					break;
+				}
+			}
+		}
+				
+		
+		function Load_Dropdown_and_Build_Plots() {
+			
+			// ******************************************
+			// Load Dropdown from Names data 
+			// *******************************************
+			
+			Plotly.d3.json('/names', function(error, data) {
+			if (!data) return callback(new Error("unable to load data"));
+			names = Object.values(data);
+			for (var n = 0; n < names.length; n++) {
+			   var $selection = document.querySelector("#selDataset")
+               var $option = document.createElement("option");
+               $option.value = names[n];
+			   $option.id = n;
+               $option.innerHTML = names[n];
+			   $selection.appendChild($option);
+			   };
+			   
+			});
+			// ***********************************
+			// Build Pie Plot from Samples Top Ten 
+			// ***********************************
+							
+			samples_pie_url = '/samples/top10/' + 'BB_940';
+			Plotly.d3.json(samples_pie_url, function(error, data){
+            if (error) return console.warn(error);
+			
+            var PIE = document.getElementById('pie');
+			
+            Plotly.plot(PIE, data);
+        })
+		
+			// ***********************************
+			// Build Bubble Plot from Samples All
+			// ***********************************
+			samples_bubble_url = '/samples/all/' + 'BB_940';
+			Plotly.d3.json(samples_bubble_url, function(error, data){
+            if (error) return console.warn(error);
+			
+            var BUBBLE = document.getElementById('bubble');
+			
+            Plotly.plot(BUBBLE, data);
+											
+			})
+			Metadata('BB_940');
+			}
+			
+			// ***********************************
+			//  Print Metadata 
+			// ***********************************
+			
+		function Metadata(route){
+		
+			metadata_url = '/metadata/' + route;
+			Plotly.d3.json(metadata_url, function(error, data) {
+			if (error) return console.warn(error);
+			metadata = Object.values(data);
+			console.log(metadata);
+			var $selection = document.querySelector("#meta")
+            var $p = document.createElement("p");
+            $p.innerHTML =  'AGE: ' + metadata[0];
+			$selection.appendChild($p);
+			var $p = document.createElement("p");
+            $p.innerHTML =  'BBTYPE: ' + metadata[1];
+			$selection.appendChild($p);
+			$p.innerHTML =  'ETHNICITY: ' + metadata[2]
+			$selection.appendChild($p);
+			var $p = document.createElement("p");
+            $p.innerHTML =  'GENDER: ' + metadata[3];
+			$selection.appendChild($p);
+			var $p = document.createElement("p");
+            $p.innerHTML =  'LOCATION: ' + metadata[4];
+			$selection.appendChild($p);
+			var $p = document.createElement("p");
+            $p.innerHTML =  'SAMPLEID: ' + metadata[5];
+			$selection.appendChild($p);
+			});
+			console.log(metadata);
+			}
+		    // ***********************************
+			// Get Wash Frequency Sample
+			// ***********************************
+			
+		//	wfreq_url = wfreq_url + 'BB_940';
+		//	Plotly.d3.json(wfreq_url, function(error, data) {
+		//	if (error) return console.warn(error);
+		//	wfreq = Object.values(data);
+		//	console.log(wfreq[0])
+		//	var $selection = document.querySelector("#wfreq")
+        //   var $p = document.createElement("p");
+        //   $p.innerHTML =  'WFREQ: ' + wfreq[0];
+		//	$selection.appendChild($p);
+			
+		//	}); 
+			
+			
+		function optionChanged(route) {
+			// Calls to restyle Pie and Bubble Plots base on route change 
+			// in drop box selection 
+			// ***********************************
+			// Restyle Pie Plot
+			// ***********************************
+							
+			samples_pie_url = '/samples/top10/' + route;
+			Plotly.d3.json(samples_pie_url, function(error, data){
+            if (error) return console.warn(error);
+			var PIE = document.getElementById('pie');
+			Plotly.restyle(PIE, 'labels', [data.labels])
+            Plotly.restyle(PIE, 'values', [data.values])
+				                   
+			})
+		
+			// ***********************************
+			// Restyle Bubble Plot
+			// ***********************************
+			samples_bubble_url = '/samples/all/' + route;
+			Plotly.d3.json(samples_bubble_url, function(error, data){
+            if (error) return console.warn(error);
+			var BUBBLE = document.getElementById('bubble');
+			Plotly.restyle(BUBBLE, 'x', [data.x])
+            Plotly.restyle(BUBBLE, 'y', [data.y])
+						
+			})
+			Metadata(route)
+		}
+		
+		
+	Load_Dropdown_and_Build_Plots();
+
+// console.log(document.getElementById("selDataset").options)
+//initRoute = setSelectedIndex(document.getElementById("selDataset"),1);
+
+		
+</script>
+	<!-- ****************************************************************************** -->
+	<!-- ****************************************************************************** -->
+	<!-- ****************************************************************************** -->
+</body>
+</html>
